@@ -14,6 +14,10 @@ from . import (
     utils, loops
 )
 from database import wrappers as wr
+import httpx
+import atexit
+
+http_client = httpx.AsyncClient()
 
 class StoneState(StatesGroup):
     choose_number_of_stones = State()
@@ -185,11 +189,13 @@ async def start_game(
             return
         try:
             await lobby.start_game()
-            await loops.round_loop(
-                bot=message.bot,
-                lobby=lobby,
-                queue=queues[lobby.lobby_id()]
-            )
+            async with httpx.AsyncClient() as client:
+                await loops.round_loop(
+                    bot=message.bot,
+                    lobby=lobby,
+                    queue=queues[lobby.lobby_id()],
+                    client=http_client, 
+                )
         except wr.ActionException as ex:
             await message.answer(str(ex))
             return
@@ -211,7 +217,7 @@ async def start_new_round(
                                  reply_markup=keyboards.between_rounds_keyboard(True))
             return
         try:
-            await loops.round_loop(message.bot, lobby, queues[lobby.lobby_id()])
+            await loops.round_loop(message.bot, lobby, queues[lobby.lobby_id()],http_client)
         except wr.ActionException as ex:
             await message.answer(str(ex))
             return

@@ -5,6 +5,7 @@ from apscheduler.triggers.date import DateTrigger
 import asyncio
 import logging
 from datetime import datetime, timedelta
+import httpx
 
 from . import keyboards, messages
 from database import wrappers as wr
@@ -13,7 +14,8 @@ from database import wrappers as wr
 async def move_loop(
     bot: Bot, 
     lobby: wr.Lobby,
-    queue: asyncio.Queue
+    queue: asyncio.Queue,
+    client: httpx.AsyncClient
 ) -> bool:
     logging.debug('Running new move')
     users = await lobby.users()
@@ -29,6 +31,22 @@ async def move_loop(
                 text=messages.info_message(),
                 reply_markup=keyboards.field_keyboard(info, lobby.default_stones_cnt, lobby.round())
             )
+        if user.status() == 'agent':
+            try:
+                info = await lobby.field_for_user(user)
+                logging.debug(f'{user.id} - {info}')
+            except wr.ActionException as ex:
+                logging.error(str(ex))
+            try:
+                response = await client.post(
+               f"http://agent_service:8001/agent/move_info/",
+                json={"agent_id": user.id, "move_data": info}
+            )
+                response.raise_for_status()
+                logging.debug("Move data sent successfully.")
+            except httpx.HTTPStatusError as e:
+                logging.error(f"Failed to send move data: {e.response.text}")
+
     logging.debug('Starting to wait a signal')
     sig = await queue.get()
     logging.debug('Sleeping 5 seconds')
@@ -40,7 +58,8 @@ async def move_loop(
 async def round_loop(
         bot: Bot,
         lobby: wr.Lobby,
-        queue: asyncio.Queue
+        queue: asyncio.Queue,
+        client: httpx.AsyncClient
 ) -> None:
     logging.debug('Starting a new round')
     await lobby.start_round()
@@ -67,7 +86,7 @@ async def round_loop(
     is_finished = False
     while lobby.stones_left() > 0 and not is_finished:
         logging.debug('Making a new move')
-        is_finished = await move_loop(bot, lobby, queue)
+        is_finished = await move_loop(bot, lobby, queue, client)
     while not queue.empty():
         queue.get_nowait()
     stones_left = lobby.stones_left()
