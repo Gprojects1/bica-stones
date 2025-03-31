@@ -688,7 +688,7 @@ class Lobby:
                SELECT * FROM lobby_%s.\"player_namings\"""" % (self.__lobby_id,))
         return {x[0]: x[1] for x in result}
 
-    async def field_for_user(self, user) -> dict[int, tuple[bool, list[int]]]:
+    async def field_for_user(self, user) -> dict[int, tuple[bool, list[str]]]:
         """
         Returns the field for a user.
         """

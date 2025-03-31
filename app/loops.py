@@ -33,19 +33,31 @@ async def move_loop(
             )
         if user.status() == 'agent':
             try:
-                info = await lobby.field_for_user(user)
+                info1 = await lobby.field_for_user(user)
+                info = {key: tuple(value) for key, value in info1.items()}
+                print(f"Тип move_{type(info)}")
+                for key, value in info.items():
+                    print(f"  Ключ: {key}, Тип ключа: {type(key)}, Значение: {value}, Тип значения: {type(value)}")
+                    if isinstance(value, tuple):
+                        print("    Это кортеж!")
+                    elif isinstance(value, list):
+                        print("    Это список!")
+                    elif isinstance(value, dict):
+                        print("    Это словарь!")
+                    else:
+                        print("    Это что-то другое!")
                 logging.debug(f'{user.id} - {info}')
             except wr.ActionException as ex:
                 logging.error(str(ex))
             try:
                 response = await client.post(
-               f"http://agent_service:8001/agent/move_info/",
-                json={"agent_id": user.id, "move_data": info}
-            )
+                f"http://172.24.80.182:8002/agent/move_info/{user.id}",  # agent_id в URL
+                json=info  # agent_id больше не в JSON
+        )
                 response.raise_for_status()
                 logging.debug("Move data sent successfully.")
             except httpx.HTTPStatusError as e:
-                logging.error(f"Failed to send move data: {e.response.text}")
+                 logging.error(f"Failed to send move {e.response.text}")
 
     logging.debug('Starting to wait a signal')
     sig = await queue.get()

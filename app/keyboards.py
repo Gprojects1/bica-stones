@@ -42,7 +42,7 @@ def __list_for_stone(is_here: bool, info: list[int]) -> str:
     s += ' '.join(map(str, info))
     return s
 
-def field_keyboard(info: dict[int, tuple[int, list[int]]], max_stone: int, round: int) -> InlineKeyboardMarkup:
+def field_keyboard(info: dict[int, tuple[int, list[str]]], max_stone: int, round: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(
         text=f'🏠 {__list_for_stone(*info[0])}', 

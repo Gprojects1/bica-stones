@@ -64,3 +64,5 @@ uvloop==0.20.0
 watchfiles==0.24.0
 websockets==13.1
 yarl==1.15.0
+aioconsole==0.8.1
+torch

@@ -12,8 +12,8 @@ services:
       POSTGRES_PORT: 5432
       TEMP_DIR: ./bica_tempdata
       LOG_LEVEL: INFO
-      BOT_TOKEN: $BOT_TOKEN
-      SUPREME_ADMIN_ID: 1018661287
+      BOT_TOKEN: 7546214635:AAGn1DL_cS_K5X0lu-SfyV-ObJ7p-Oa2vew
+      SUPREME_ADMIN_ID: 5092237452
     volumes:
       - .:/app
     ports:

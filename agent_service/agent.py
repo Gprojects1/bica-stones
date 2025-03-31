@@ -5,13 +5,15 @@ from typing import Optional, Dict, List
 from agent_service import neural_network as n
 
 agents: Dict[int, "Agent"] = {}
-
+count: int = 0
 class Agent:
     def __init__(self, agent_id: int, api_url: str):
+        global count
         self.agent_id = agent_id
         self.api_url = api_url
         self.client = httpx.AsyncClient()
-        self.neural_network = n.NeuralNetwork()  
+        self.neural_network = n.AgentTG(count, 'agent_service/10_stone.pth')
+        count += 1
 
     async def get_lobby_ids(self) -> Optional[List[int]]:
         try:
@@ -22,11 +24,10 @@ class Agent:
             logging.error(f"Error getting lobby IDs: {e.response.text}")
             return None
 
-    async def enter_lobby(self, lobby_id: int) -> Optional[dict]:
+    async def enter_lobby(self, lobby_id: int):
         try:
             response = await self.client.post(
-                f"{self.api_url}/enter_lobby/",
-                json={"lobby_id": lobby_id, "agent_id": self.agent_id}
+                f"{self.api_url}/enter_lobby/?lobby_id={lobby_id}&agent_id={self.agent_id}"  # Параметры в query string
             )
             response.raise_for_status()
             return response.json()
@@ -62,7 +63,8 @@ class Agent:
         try:
             response = await self.client.post(
                 f"{self.api_url}/game/pick_stone/",
-                json={"agent_id": self.agent_id, "stone": stone}
+                params={"agent_id": self.agent_id, "stone": stone},
+                timeout=10.0
             )
             response.raise_for_status()
             return response.json()
